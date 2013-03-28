@@ -17,9 +17,9 @@ package operations
 		public static const CANCELED:String = "canceled";
 		
 		/**
-		 * The event type for when an operation is ready to be executed.
+		 * The event type for when the operation is reset.
 		 */
-		public static const READY:String = "ready";
+		public static const RESET:String = "reset";
 		
 		/**
 		 * The event type before an operation is executed.

@@ -2,6 +2,8 @@ package operations
 {
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
+	import flash.events.TimerEvent;
+	import flash.utils.Timer;
 
 	/**
 	 * Dispatched when the execution of an operation has been canceled.
@@ -9,9 +11,9 @@ package operations
 	[Event(name="canceled", type="operations.OperationEvent")]
 	
 	/**
-	 * Dispatched when the execution of an operation has been queued.
+	 * Dispatched when the operation has been reset.
 	 */
-	[Event(name="ready", type="operations.OperationEvent")]
+	[Event(name="reset", type="operations.OperationEvent")]
 	
 	/**
 	 * Dispatched after the execution of an operation has started.
@@ -61,17 +63,28 @@ package operations
 		private static const FINISHED:int = 2;
 		
 		private var _state:int = READY;
-		
+
+		private var _timeoutTimer:Timer;
+
+		private var _retries:Retries = new Retries(0);
+		private var _retryTimer:Timer;
+
 		/**
 		 * Constructor.
 		 */
 		public function Operation()
 		{
 			super();
+
+			_timeoutTimer = new Timer(0, 1);
+			_timeoutTimer.addEventListener(TimerEvent.TIMER_COMPLETE, handleTimeoutTimer);
+
+			_retryTimer = new Timer(0, 1);
+			_retryTimer.addEventListener(TimerEvent.TIMER_COMPLETE, handleRetryTimer);
 		}
 		
 		/**
-		 * Cancels the request, if it can be canceled.
+		 * Cancels the request, if it's executing.
 		 */
 		final public function cancel():void
 		{
@@ -102,13 +115,18 @@ package operations
 		 */
 		final public function execute():void
 		{
-			if (isQueued) {
+			if (isReady) {
 				changeState(EXECUTING);
 				fireBeforeExecute();
 				
 				if (isExecuting) {
 					executeRequest();
 					fireAfterExecute();
+
+					_timeoutTimer.delay = timeout;
+					if (_timeoutTimer.delay > 0) {
+						_timeoutTimer.start();
+					}
 				}
 			}
 		}
@@ -132,10 +150,14 @@ package operations
 		public function fault(fault:Object):void
 		{
 			if (isExecuting) {
-				_error = fault;
-				_hasErrored = true;
-				fireFault(_error);
-				finish(false);
+				if (_retries.canRetry) {
+					retry();
+				} else {
+					_error = fault;
+					_hasErrored = true;
+					fireFault(_error);
+					finish(false);
+				}
 			}
 		}
 		
@@ -151,7 +173,8 @@ package operations
 		final protected function finish(successful:Boolean):void
 		{
 			if (isExecuting) {
-				changeState(FINISHED)
+				resetTimers();
+				changeState(FINISHED);
 				progressed(unitsTotal);
 				fireFinished(successful);
 			}
@@ -161,13 +184,6 @@ package operations
 		{
 			if (hasEventListener(OperationEvent.CANCELED)) {
 				dispatchEvent( new OperationEvent(OperationEvent.CANCELED) );
-			}
-		}
-		
-		private function fireQueued():void
-		{
-			if (hasEventListener(OperationEvent.READY)) {
-				dispatchEvent( new OperationEvent(OperationEvent.READY) );
 			}
 		}
 		
@@ -198,6 +214,13 @@ package operations
 				dispatchEvent( new FaultOperationEvent(fault) );
 			}
 		}
+
+		private function fireReset():void
+		{
+			if (hasEventListener(OperationEvent.RESET)) {
+				dispatchEvent( new OperationEvent(OperationEvent.RESET) );
+			}
+		}
 		
 		private function fireResult(data:Object):void
 		{
@@ -211,6 +234,16 @@ package operations
 			if (hasEventListener(FinishedOperationEvent.FINISHED)) {
 				dispatchEvent( new FinishedOperationEvent(successful) );
 			}
+		}
+
+		private function handleRetryTimer(event:TimerEvent):void
+		{
+			executeRequest();
+		}
+
+		private function handleTimeoutTimer(event:TimerEvent):void
+		{
+			fault("Operation timed out after " + timeout.toString() + "ms.");
 		}
 		
 		/**
@@ -232,6 +265,7 @@ package operations
 		public function reset():void
 		{
 			if (isExecuting) {
+				resetTimers();
 				cancelRequest();
 			}
 			
@@ -240,10 +274,16 @@ package operations
 			_hasErrored = false;
 			_resultData = null;
 			
-			if (!isQueued) {
+			if (!isReady) {
 				changeState(READY);
-				fireQueued();
+				fireReset();
 			}
+		}
+
+		private function resetTimers():void
+		{
+			_retryTimer.reset();
+			_timeoutTimer.reset();
 		}
 
 		/**
@@ -263,6 +303,38 @@ package operations
 				fireResult(_resultData);
 				finish(true);
 			}
+		}
+
+		/**
+		 * Sets the number of retries for this operation. This method will return a
+		 * <code>Retries</code> object where you can change the amount of time between
+		 * each retry.
+		 *
+		 * <p>
+		 * <strong>Example:</strong> Setting the retry attempts and their delays for a network
+		 * operation:
+		 *
+		 * <listing version="3.0">
+		 * operation.retries(3).withDelay(1500, 3000, 6000);
+		 * </listing>
+		 * </p>
+		 *
+		 * @param count The number of retries to attempt before failing.
+		 * @return A retry object to set the delay intervals.
+		 */
+		public function retries(count:uint):Retries
+		{
+			if (isExecuting) {
+				throw new Error("Cannot change retries while operation is executing.");
+			}
+			_retries = new Retries(count);
+			return _retries;
+		}
+
+		private function retry():void
+		{
+			_retryTimer.delay = _retries.reattempt();
+			_retryTimer.start();
 		}
 
 		private var _error:Object;
@@ -297,7 +369,7 @@ package operations
 		/**
 		 * Indicates whether the request is idle and ready to be executed.
 		 */
-		final public function get isQueued():Boolean
+		final public function get isReady():Boolean
 		{
 			return _state == READY;
 		}
@@ -343,6 +415,19 @@ package operations
 		public function get resultData():Object
 		{
 			return _resultData;
+		}
+
+		private var _timeout:Number = 0;
+		/**
+		 * The number of milliseconds with each attempt before this operation will timeout.
+		 */
+		public function get timeout():Number
+		{
+			return timeout;
+		}
+		public function set timeout(value:Number):void
+		{
+			_timeout = isNaN(value) ? 0 : value;
 		}
 		
 		/**
