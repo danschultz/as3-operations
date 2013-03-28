@@ -1,0 +1,29 @@
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath group: 'org.gradlefx', name: 'gradlefx', version: '0.6'
+	}
+}
+
+apply plugin: 'gradlefx'
+
+type = 'swc'
+version = '0.1-SNAPSHOT'
+output = name + '-' + version
+
+repositories {
+	add(new org.apache.ivy.plugins.resolver.URLResolver()) {
+		name = 'Apache'
+		addArtifactPattern 'http://apache.cu.be/flex/4.9.0/binaries/[module]-[revision]-bin.[ext]'
+	}
+}
+
+dependencies {
+	flexSDK group: 'org.apache', name: 'apache-flex-sdk', version: '4.9.0', ext: 'tar.gz'
+}
+
+sdkAutoInstall {
+	showPrompts	= false
+}
