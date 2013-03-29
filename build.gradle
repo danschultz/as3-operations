@@ -12,16 +12,24 @@ apply plugin: 'gradlefx'
 type = 'swc'
 version = '0.1-SNAPSHOT'
 output = name + '-' + version
+srcDirs = ['src/main/flex']
+testDirs = ['src/test/flex']
 
 repositories {
 	add(new org.apache.ivy.plugins.resolver.URLResolver()) {
 		name = 'Apache'
 		addArtifactPattern 'http://apache.cu.be/flex/4.9.0/binaries/[module]-[revision]-bin.[ext]'
 	}
+
+	mavenRepo name: 'mixbook-releases', url: "http://ec2-50-18-147-222.us-west-1.compute.amazonaws.com:8081/artifactory/repo"
 }
 
 dependencies {
 	flexSDK group: 'org.apache', name: 'apache-flex-sdk', version: '4.9.0', ext: 'tar.gz'
+	
+    test group: 'org.flexunit', name: 'flexunit-tasks', version: '4.1.0-8', ext: 'jar'
+    test group: 'org.flexunit', name: 'flexunit', version: '4.1.0-8', ext: 'swc'
+    test group: 'org.flexunit', name: 'flexunit-cilistener', version: '4.1.0-8', ext: 'swc'
 }
 
 sdkAutoInstall {
