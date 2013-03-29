@@ -12,15 +12,19 @@ package operations
 			_delays = [];
 		}
 
-		internal function reattempt():int
+		internal function reattempt():Number
 		{
-			_attempt++;
-			return _delays[Math.min(_delays.length-1, _attempt-1)];
+			if (canRetry) {
+				_attempt++;
+				return _delays.length == 0 ? 0 : _delays[Math.min(_delays.length-1, _attempt-1)];
+			}
+			return NaN;
 		}
 
-		public function withDelay(...delays):void
+		public function withDelay(...delays):Retries
 		{
 			_delays = delays.length > _retryCount ? delays.slice(0, _retryCount) : delays;
+			return this;
 		}
 
 		public function get canRetry():Boolean

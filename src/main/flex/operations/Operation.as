@@ -120,24 +120,29 @@ package operations
 				fireBeforeExecute();
 				
 				if (isExecuting) {
-					executeRequest();
+					executeOperation();
 					fireAfterExecute();
-
-					_timeoutTimer.delay = timeout;
-					if (_timeoutTimer.delay > 0) {
-						_timeoutTimer.start();
-					}
 				}
 			}
 		}
+
+		private function executeOperation():void
+		{
+			_timeoutTimer.delay = timeout;
+			if (_timeoutTimer.delay > 0) {
+				_timeoutTimer.start();
+			}
+
+			performOperation();
+		}
 		
 		/**
-		 * Performs the execution for this type of request. This method is intended
+		 * Performs the execution for this type of operation. This method is intended
 		 * to be overridden by sub-classes and should not be called directly.
 		 */
-		protected function executeRequest():void
+		protected function performOperation():void
 		{
-			
+
 		}
 		
 		/**
@@ -238,7 +243,7 @@ package operations
 
 		private function handleRetryTimer(event:TimerEvent):void
 		{
-			executeRequest();
+			executeOperation();
 		}
 
 		private function handleTimeoutTimer(event:TimerEvent):void
@@ -423,7 +428,7 @@ package operations
 		 */
 		public function get timeout():Number
 		{
-			return timeout;
+			return _timeout;
 		}
 		public function set timeout(value:Number):void
 		{
