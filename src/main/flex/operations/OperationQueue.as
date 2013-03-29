@@ -37,7 +37,7 @@ package operations
 	 * until the queue is empty. Multiple operations can be executed simultaneously by passing in a 
 	 * <code>simultaneousCount</code> to the queue's constructor. Operations can be added and removed
 	 * from the queue while it's running.
-	 * <p>
+	 * </p>
 	 * 
 	 * <p>
 	 * Users can monitor the progress of the queue by using the queue's <code>progress</code>

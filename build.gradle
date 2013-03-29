@@ -8,12 +8,14 @@ buildscript {
 }
 
 apply plugin: 'gradlefx'
+apply plugin: 'maven'
 
 type = 'swc'
 version = '0.1-SNAPSHOT'
 output = name + '-' + version
 srcDirs = ['src/main/flex']
 testDirs = ['src/test/flex']
+fatSwc = true
 
 repositories {
 	add(new org.apache.ivy.plugins.resolver.URLResolver()) {
@@ -26,7 +28,7 @@ repositories {
 
 dependencies {
 	flexSDK group: 'org.apache', name: 'apache-flex-sdk', version: '4.9.0', ext: 'tar.gz'
-	
+
     test group: 'org.flexunit', name: 'flexunit-tasks', version: '4.1.0-8', ext: 'jar'
     test group: 'org.flexunit', name: 'flexunit', version: '4.1.0-8', ext: 'swc'
     test group: 'org.flexunit', name: 'flexunit-cilistener', version: '4.1.0-8', ext: 'swc'

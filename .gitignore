@@ -2,5 +2,6 @@ build/
 bin/
 target/
 out/
+doc/
 .*
 *.iml
