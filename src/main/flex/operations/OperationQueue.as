@@ -187,11 +187,11 @@ package operations
 			if (event.successful) {
 				_progress.confirmed += event.operation.progress.complete;
 			}
-			
+
 			event.operation.removeEventListener(ProgressOperationEvent.PROGRESS, handleOperationProgress);
 			event.operation.removeEventListener(FinishedOperationEvent.FINISHED, handleOperationFinished);
 			executeAvailable();
-			
+
 			fireProgress();
 			if (executing.length == 0) {
 				fireIdle();
@@ -217,7 +217,7 @@ package operations
 		{
 			fireEvent(OperationQueueEvent.IDLE);
 		}
-		
+
 		private function fireEvent(type:String):void
 		{
 			if (hasEventListener(type)) {
@@ -323,7 +323,7 @@ package operations
 		/**
 		 * The progress of the queue.
 		 */
-		public function get progress():Progress
+		public function get progress():QueueProgress
 		{
 			return _progress;
 		}

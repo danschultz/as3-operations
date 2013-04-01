@@ -13,7 +13,7 @@ package operations
 		public function MockOperation(responseTime:int = 0, fail:Boolean = false)
 		{
 			super();
-			_fail = fail
+			_fail = fail;
 
 			_responseTimer = new Timer(responseTime, 1);
 			_responseTimer.addEventListener(TimerEvent.TIMER_COMPLETE, handleResponseTimer);
