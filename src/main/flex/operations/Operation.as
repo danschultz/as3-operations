@@ -1,9 +1,10 @@
 package operations
 {
-	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.TimerEvent;
 	import flash.utils.Timer;
+
+	import mx.events.PropertyChangeEvent;
 
 	/**
 	 * Dispatched when the execution of an operation has been canceled.
@@ -107,7 +108,7 @@ package operations
 		private function changeState(newState:int):void
 		{
 			_state = newState;
-			dispatchEvent(new Event("propertyChange"));
+			dispatchEvent(new PropertyChangeEvent(PropertyChangeEvent.PROPERTY_CHANGE));
 		}
 		
 		/**
