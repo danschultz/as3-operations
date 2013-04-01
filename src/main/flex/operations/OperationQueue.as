@@ -323,7 +323,7 @@ package operations
 		/**
 		 * The progress of the queue.
 		 */
-		public function get progress():QueueProgress
+		public function get progress():Progress
 		{
 			return _progress;
 		}
